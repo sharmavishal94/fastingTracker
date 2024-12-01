@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intermittent Fasting Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Fasting Tracker</h1>
+    <div>
+        <label>Fasting Start:</label>
+        <input type="datetime-local" id="start-time">
+    </div>
+    <div>
+        <label>Fasting Duration (hours):</label>
+        <input type="number" id="duration" min="1">
+    </div>
+    <button id="start-fasting">Start Fasting</button>
+    <button id="end-fasting">End Fast</button>
+    <h2 id="status"></h2>
+    <ul id="history"></ul>
+    <script src="popup.js"></script>
+</body>
+</html>
