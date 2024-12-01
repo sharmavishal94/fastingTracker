@@ -10,24 +10,29 @@ document.getElementById('start-fasting').addEventListener('click', () => {
     const startTime = new Date(startTimeInput);
     const endTime = new Date(startTime.getTime() + duration * 60 * 60 * 1000);
 
-    chrome.storage.local.set(
-        { fasting: { startTime: startTime.toISOString(), endTime: endTime.toISOString(), isActive: true } },
-        () => {
-            updateStatus();
-            scheduleNotification(endTime);
-        }
-    );
+    const fastingEntry = {
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        isActive: true,
+    };
+
+    // Save fasting data to Chrome storage
+    chrome.storage.local.set({ fasting: fastingEntry }, () => {
+        alert("Fasting started!");
+        updateStatus();
+    });
 });
 
 document.getElementById('end-fasting').addEventListener('click', () => {
     chrome.storage.local.get('fasting', ({ fasting }) => {
         if (fasting && fasting.isActive) {
-            const now = new Date();
-            fasting.endTime = now.toISOString(); // Manually set the end time
-            fasting.isActive = false; // Mark the fast as ended
+            fasting.isActive = false;
+            fasting.endTime = new Date().toISOString();
+
+            // Update fasting data in Chrome storage
             chrome.storage.local.set({ fasting }, () => {
+                alert("Fasting ended!");
                 updateStatus();
-                alert("Fasting ended manually.");
             });
         } else {
             alert("No active fasting session to end.");
@@ -35,30 +40,39 @@ document.getElementById('end-fasting').addEventListener('click', () => {
     });
 });
 
+function calculatePhase(startTime) {
+    const now = new Date();
+    const elapsedHours = (now - new Date(startTime)) / (1000 * 60 * 60);
+
+    if (elapsedHours < 4) {
+        return "Early Fasting";
+    } else if (elapsedHours < 12) {
+        return "Fat Burning";
+    } else {
+        return "Deep Fasting";
+    }
+}
+
 function updateStatus() {
     chrome.storage.local.get('fasting', ({ fasting }) => {
         if (fasting) {
             const now = new Date();
-            const startTime = new Date(fasting.startTime);
             const endTime = new Date(fasting.endTime);
+            const isActive = fasting.isActive;
 
-            if (fasting.isActive && now < endTime) {
-                document.getElementById('status').innerText = `Fasting until ${endTime.toLocaleString()}`;
-            } else if (!fasting.isActive || now >= endTime) {
+            if (isActive && now < endTime) {
+                const phase = calculatePhase(fasting.startTime);
+                const remaining = Math.ceil((endTime - now) / (1000 * 60)); // Remaining minutes
+                document.getElementById('status').innerText = `
+                    Phase: ${phase}
+                    Time Left: ${remaining} minutes
+                `;
+            } else {
                 document.getElementById('status').innerText = `Fasting ended at ${endTime.toLocaleString()}`;
             }
         } else {
-            document.getElementById('status').innerText = "No active fasting period.";
+            document.getElementById('status').innerText = "No active fasting session.";
         }
-    });
-}
-
-function scheduleNotification(endTime) {
-    chrome.notifications.create({
-        type: 'basic',
-        // iconUrl: 'icons/icon48.png',
-        title: 'Fasting Tracker',
-        message: `Fasting ends at ${endTime.toLocaleString()}`
     });
 }
 
